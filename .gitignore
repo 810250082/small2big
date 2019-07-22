@@ -32,3 +32,6 @@ __pycache__/
 .idea/mongoSettings.xml
 
 .idea/
+# test
+test/
+imgs/
