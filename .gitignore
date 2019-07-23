@@ -34,4 +34,4 @@ __pycache__/
 .idea/
 # test
 test/
-imgs/*.jpg
+imgs/

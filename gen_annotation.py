@@ -14,6 +14,7 @@ import numpy as np
 import os
 from collections import defaultdict
 from PIL import Image
+import shutil
 
 
 img_path = 'imgs/origin'
@@ -161,6 +162,13 @@ def gen_anno(img_path, target_path, anno_name, img_num,
     :param nav_num:
     :return:
     """
+    # 删除标注和 目标文件夹
+    if os.path.exists(anno_name):
+        os.remove(anno_name)
+    if os.path.exists(target_path):
+        shutil.rmtree(target_path)
+    os.mkdir(target_path)
+
     # 随机抽取若干张图片
     all_imgs = os.listdir(img_path)
     select_imgs = random.sample(all_imgs, img_num)
@@ -169,53 +177,69 @@ def gen_anno(img_path, target_path, anno_name, img_num,
     for img_name_with_suffix in select_imgs:
         # 制造目标框和锚框
         # 获取目标框
-        targets = select_target_imgs((0.1, 0.5), (0.5, 3), target_num, threshold=0.5)
+        targets = select_target_imgs((0.1, 0.3), (0.5, 3), target_num, threshold=0.5)
 
         target_anchar_dict = {k: defaultdict(list) for k in targets}
-        # 生成目标框对应的正例和负例
-        while True:
-            # 是否生成完毕标志位
-            is_full = True
-            anchor = gen_anchor((0.2, 0.9), (0.5, 3))
-            for k, target in targets.items():
-                if is_contain_target(anchor, target):
-                    # 判断该目标框是否已经存满
-                    if len(target_anchar_dict[k]['pos']) < pos_num:
-                        is_full = False
-                        target_anchar_dict[k]['pos'].append(anchor)
-                else:
-                    if len(target_anchar_dict[k]['nav']) < nav_num:
-                        is_full = False
-                        target_anchar_dict[k]['nav'].append(anchor)
-            if is_full:
-                break
+        # # 生成目标框对应的正例和负例
+        # while True:
+        #     # 是否生成完毕标志位
+        #     is_full = True
+        #     anchor = gen_anchor((0.2, 0.9), (0.5, 3))
+        #     for k, target in targets.items():
+        #         if is_contain_target(anchor, target):
+        #             # 判断该目标框是否已经存满
+        #             if len(target_anchar_dict[k]['pos']) < pos_num:
+        #                 is_full = False
+        #                 target_anchar_dict[k]['pos'].append(anchor)
+        #                 break
+        #         else:
+        #             if len(target_anchar_dict[k]['nav']) < nav_num:
+        #                 is_full = False
+        #                 target_anchar_dict[k]['nav'].append(anchor)
+        #                 break
+        #     if is_full:
+        #         break
+
+        for k, target in targets.items():
+            while len(target_anchar_dict[k]['pos']) + len(target_anchar_dict[k]['nav']) < pos_num + nav_num:
+                anchor = gen_anchor((0.2, 0.6), (0.5, 3))
+                is_contain = is_contain_target(anchor, target)
+                if len(target_anchar_dict[k]['pos']) < pos_num and is_contain:
+                    target_anchar_dict[k]['pos'].append(anchor)
+                if len(target_anchar_dict[k]['nav']) < nav_num and not is_contain:
+                    target_anchar_dict[k]['nav'].append(anchor)
 
         img_file = os.path.join(img_path, img_name_with_suffix)
         img_name = img_name_with_suffix.split('.')[0]
         img = Image.open(img_file)
-        w, h = img.size()
+        w, h = img.size
         target_name = {}
         # 保存目标框
         for k, target in targets.items():
             target_point = (target * np.array([w, h, w, h])).astype(int)
-            target_img = img[target_point[1]: target_point[3], target_point[0]: target_point[1], :]
-            target_name[k] = os.path.join(target_path, "{}_{}".format(img_name, k), '.jpg')
-            target_img = Image.fromarray(target_img)
+            # target_img = img[target_point[1]: target_point[3], target_point[0]: target_point[1], :]
+            target_img = img.crop(target_point)
+            target_name[k] = os.path.join(target_path, "{}_{}.jpg".format(img_name, k))
+            # target_img = Image.fromarray(target_img)
             target_img.save(target_name[k])
 
         # 生成标注
-        for k, item in target_anchar_dict:
+        for k, item in target_anchar_dict.items():
             for label, anchor_list in item.items():
                 for anchor in anchor_list:
                     arr = []
                     arr.append(target_name[k])
                     arr.append(img_file)
-                    arr.append(','.join(anchor))
-                    arr.append(1 if label == 'pos' else 0)
+                    arr.append(','.join(['{:.2f}'.format(point) for point in anchor]))
+                    arr.append('1' if label == 'pos' else '0')
                     annos.append(','.join(arr))
 
-        # 将标注写入文件中
-        with open(anno_name, 'w') as f:
-            f.writelines()
+    # 将标注写入文件中
+    with open(anno_name, 'w') as f:
+        f.write('\n'.join(annos))
 
 
+if __name__ == '__main__':
+    gen_anno(img_path, target_path, annotation, 1,
+             target_num=6, pos_num=5, nav_num=10)
+    b = 1
