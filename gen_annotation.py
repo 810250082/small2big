@@ -148,6 +148,7 @@ def is_contain_target(anchor, target, threshold=0.5):
 
 
 def gen_anno(img_path, target_path, anno_name, img_num,
+             target_s_list, target_r_list, anchor_s_list, anchor_r_list,
              target_num=6, pos_num=5, nav_num=10):
     """
     从img_path中取原始图片上生成target_num个目标框,
@@ -177,7 +178,7 @@ def gen_anno(img_path, target_path, anno_name, img_num,
     for img_name_with_suffix in select_imgs:
         # 制造目标框和锚框
         # 获取目标框
-        targets = select_target_imgs((0.1, 0.3), (0.5, 3), target_num, threshold=0.5)
+        targets = select_target_imgs(target_s_list, target_r_list, target_num, threshold=0.5)
 
         target_anchar_dict = {k: defaultdict(list) for k in targets}
         # # 生成目标框对应的正例和负例
@@ -202,7 +203,7 @@ def gen_anno(img_path, target_path, anno_name, img_num,
 
         for k, target in targets.items():
             while len(target_anchar_dict[k]['pos']) + len(target_anchar_dict[k]['nav']) < pos_num + nav_num:
-                anchor = gen_anchor((0.2, 0.6), (0.5, 3))
+                anchor = gen_anchor(anchor_s_list, anchor_r_list)
                 is_contain = is_contain_target(anchor, target)
                 if len(target_anchar_dict[k]['pos']) < pos_num and is_contain:
                     target_anchar_dict[k]['pos'].append(anchor)
@@ -241,5 +242,6 @@ def gen_anno(img_path, target_path, anno_name, img_num,
 
 if __name__ == '__main__':
     gen_anno(img_path, target_path, annotation, 1,
+             (0.1, 0.3), (0.5, 2), (0.2, 0.6), (0.5, 2),
              target_num=6, pos_num=5, nav_num=10)
     b = 1
