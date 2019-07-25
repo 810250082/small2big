@@ -181,25 +181,7 @@ def gen_anno(img_path, target_path, anno_name, img_num,
         targets = select_target_imgs(target_s_list, target_r_list, target_num, threshold=0.5)
 
         target_anchar_dict = {k: defaultdict(list) for k in targets}
-        # # 生成目标框对应的正例和负例
-        # while True:
-        #     # 是否生成完毕标志位
-        #     is_full = True
-        #     anchor = gen_anchor((0.2, 0.9), (0.5, 3))
-        #     for k, target in targets.items():
-        #         if is_contain_target(anchor, target):
-        #             # 判断该目标框是否已经存满
-        #             if len(target_anchar_dict[k]['pos']) < pos_num:
-        #                 is_full = False
-        #                 target_anchar_dict[k]['pos'].append(anchor)
-        #                 break
-        #         else:
-        #             if len(target_anchar_dict[k]['nav']) < nav_num:
-        #                 is_full = False
-        #                 target_anchar_dict[k]['nav'].append(anchor)
-        #                 break
-        #     if is_full:
-        #         break
+        # 生成目标框对应的正例和负例
 
         for k, target in targets.items():
             while len(target_anchar_dict[k]['pos']) + len(target_anchar_dict[k]['nav']) < pos_num + nav_num:
