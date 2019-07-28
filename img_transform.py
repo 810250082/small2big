@@ -50,6 +50,16 @@ class ExpandTwoPic(object):
         return target_mask.astype(np.float32), anchor_mask.astype(np.float32), label
 
 
+class Resize(object):
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, target, anchor, label):
+        target = cv2.resize(target, (self.size, self.size))
+        anchor = cv2.resize(anchor, (self.size, self.size))
+        return target, anchor, label
+
+
 class SubtractMean(object):
     """
     减去平均值
@@ -64,11 +74,12 @@ class SubtractMean(object):
 
 
 class PhotoTransform(object):
-    def __init__(self, means=(104, 117, 123)):
+    def __init__(self, means=(104, 117, 123), size=300):
         self.means = means
         self.compose = Compose([
             ExpandTarget(),
             ExpandTwoPic(self.means),
+            Resize(size),
             SubtractMean(self.means)
         ])
 
