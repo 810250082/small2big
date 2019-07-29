@@ -281,7 +281,7 @@ def show_rectangle(img, points=[], label=[], absolute=False):
 
 
 if __name__ == '__main__':
-    gen_anno(img_path, target_path, annotation, 1000,
+    gen_anno(img_path, target_path, annotation, 100,
              (0.1, 0.3), (0.5, 2), (0.2, 0.6), (0.5, 2),
              target_num=6, pos_num=5, nav_num=10)
     b = 1

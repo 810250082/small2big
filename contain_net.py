@@ -11,64 +11,6 @@ from img_transform import PhotoTransform
 from torch import nn, optim
 from torchsummary import summary
 import numpy as np
-# 制作数据集
-
-
-class ContainDataset(tdata.Dataset):
-    """
-    数据集类
-    """
-    def __init__(self, anno_name, transform):
-        with open(anno_name, 'r') as f:
-            self.annos = [item.strip() for item in f.readlines()]
-        self.transform = transform
-
-    def __len__(self):
-        return len(self.annos)
-
-    def __getitem__(self, i):
-        target, anchor, points, label = self.parse_anno(self.annos[i])
-        # print(label)
-        # cv2.imshow('11', target)
-        # cv2.waitKey(0)
-        # cv2.imshow('111', anchor)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-        h, w = anchor.shape[:2]
-        x1, y1, x2, y2 = (points * np.array([w, h, w, h])).astype(int)
-        anchor = anchor[x1: x2, y1: y2]
-        # cv2.imshow('1111', anchor)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-        target, anchor, label = self.transform(target, anchor, label)
-        target = target[:, :, (2, 1, 0)]
-        anchor = anchor[:, :, (2, 1, 0)]
-
-        return torch.tensor(target, dtype=torch.float).permute(2, 1, 0), \
-               torch.tensor(anchor, dtype=torch.float).permute(2, 1, 0), \
-               label
-
-    def parse_anno(self, anno_txt):
-        """
-        解析标注
-        :param anno:
-        :return:
-        """
-        annos = anno_txt.split(',')
-        target = cv2.imread(annos[0])
-        anchor = cv2.imread(annos[1])
-        points = [float(item) for item in annos[2: 6]]
-        label = int(annos[6])
-        return target, anchor, points, label
-
-
-def collect_func(batch):
-    photos = []
-    labels = []
-    for item in batch:
-        photos.append(torch.cat([item[0], item[1]], 0).unsqueeze(0))
-        labels.append(item[2])
-    return torch.cat(photos, 0), torch.tensor(labels, dtype=torch.float).unsqueeze(1)
 
 
 class ContainNet(nn.Module):
@@ -120,52 +62,52 @@ class ContainNet(nn.Module):
             # x = self.maxpooling1(nn.ReLU(self.bn1(self.conv1(x))))
         x = torch.sigmoid(self.conv7(x))
         return x.view(-1, 1)
-
-
-anno_train = 'annot/train.txt'
-anno_test = 'annot/test.txt'
-epochs = 10
-batch_size = 32
-lr = 0.0001
-reuse_checkout = ''
-
-device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
-net = ContainNet()
-# 加载模型参数
-if reuse_checkout:
-    net.load_state_dict(torch.load(reuse_checkout, map_location=lambda storage, loc: storage))
-
-net.to(device=device)
-# summary(net, (6, 300, 300))
-# 损失函数
-loss = nn.BCELoss()
-trainer = optim.Adam(net.parameters(), lr=lr)
-
-train_dataset = ContainDataset(anno_train, PhotoTransform())
-train_iter = tdata.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collect_func)
-
-test_dataset = ContainDataset(anno_test, PhotoTransform())
-test_iter = tdata.DataLoader(test_dataset, batch_size=batch_size, shuffle=True, collate_fn=collect_func)
-
-
-def train(data_iter, net, loss, trainer, epochs):
-    for epoch in range(epochs):
-        for i, (X, y) in enumerate(data_iter):
-            X = X.to(device)
-            y = y.to(device)
-            net.zero_grad()
-            y_pre = net(X)
-            l = loss(y_pre, y)
-            l.backward()
-            trainer.step()
-            if i % 5 == 0:
-                print('epoch {}/{}, loss {}'.format(epoch, i, l))
-        # 保存模型参数
-        torch.save(net.state_dict(), 'weight/epoch{}.pth'.format(epoch))
-
-
-train(train_iter, net, loss, trainer, epochs)
+#
+#
+# anno_train = 'annot/train.txt'
+# anno_test = 'annot/test.txt'
+# epochs = 5
+# batch_size = 32
+# lr = 0.0001
+# reuse_checkout = 'weight/epoch4.pth'
+#
+# device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+#
+# net = ContainNet()
+# # 加载模型参数
+# if reuse_checkout:
+#     net.load_state_dict(torch.load(reuse_checkout, map_location=lambda storage, loc: storage))
+#
+# net.to(device=device)
+# # summary(net, (6, 300, 300))
+# # 损失函数
+# loss = nn.BCELoss()
+# trainer = optim.Adam(net.parameters(), lr=lr)
+#
+# train_dataset = ContainDataset(anno_train, PhotoTransform())
+# train_iter = tdata.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collect_func)
+#
+# test_dataset = ContainDataset(anno_test, PhotoTransform())
+# test_iter = tdata.DataLoader(test_dataset, batch_size=batch_size, shuffle=True, collate_fn=collect_func)
+#
+#
+# def train(data_iter, net, loss, trainer, epochs):
+#     for epoch in range(epochs):
+#         for i, (X, y) in enumerate(data_iter):
+#             X = X.to(device)
+#             y = y.to(device)
+#             net.zero_grad()
+#             y_pre = net(X)
+#             l = loss(y_pre, y)
+#             l.backward()
+#             trainer.step()
+#             if i % 5 == 0:
+#                 print('epoch {}/{}, loss {}'.format(epoch, i, l))
+#         # 保存模型参数
+#         torch.save(net.state_dict(), 'weight/epoch{}.pth'.format(epoch))
+#
+#
+# train(train_iter, net, loss, trainer, epochs)
 
 
 if __name__ == '__main__':
