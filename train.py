@@ -15,7 +15,7 @@ anno_test = 'annot/test.txt'
 epochs = 3
 batch_size = 32
 lr = 0.0001
-reuse_checkout = 'weight/epoch2.pth'
+reuse_checkout = 'weight/epoch2_1.pth'
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 

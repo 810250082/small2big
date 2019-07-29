@@ -236,17 +236,10 @@ def gen_anno(img_path, target_path, anno_name, img_num,
                     annos.append(','.join(arr))
 
     # 将标注写入文件中
-    total_annos = len(annos)
-    train_anno_ids = random.sample(range(total_annos), int(dateset_rate*total_annos))
-    # test_anno_ids = list(range(total_annos) - train_anno_ids)
 
-    train_anno = []
-    test_anno = []
-    for i, item in enumerate(annos):
-        if i in train_anno_ids:
-            train_anno.append(annos[i])
-        else:
-            test_anno.append(annos[i])
+    train_num = int(dateset_rate * len(annos))
+    train_anno = annos[:train_num]
+    test_anno = annos[train_num:]
 
     with open(os.path.join(anno_name, 'train.txt'), 'w') as f:
         f.write('\n'.join(train_anno))
