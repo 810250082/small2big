@@ -29,7 +29,15 @@ class ExpandTarget(object):
 
     def __call__(self, target, anchor, label):
         # 等比例放大 或 缩小
+        # print(target.shape)
+        # cv2.imshow('11', target)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
         target = cv2.resize(target, None, fx=self.scale, fy=self.scale)
+        # print(target.shape)
+        # cv2.imshow('111', target)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
         return target, anchor, label
 
 
@@ -47,6 +55,10 @@ class ExpandTwoPic(object):
         anchor_mask = target_mask.copy()
         target_mask[0: target.shape[0], 0: target.shape[1]] = target
         anchor_mask[0: anchor.shape[0], 0: anchor.shape[1]] = anchor
+        # cv2.imshow('11', target_mask.astype(np.uint8))
+        # cv2.imshow('111', anchor_mask.astype(np.uint8))
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
         return target_mask.astype(np.float32), anchor_mask.astype(np.float32), label
 
 

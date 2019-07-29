@@ -15,11 +15,12 @@ import os
 from collections import defaultdict
 from PIL import Image
 import shutil
+import matplotlib.pyplot as plt
 
 
 img_path = 'imgs/origin'
 target_path = 'imgs/target'
-annotation = 'imgs/annot.txt'
+annotation = 'annot'
 # 大小的取值范围
 s_list = [0.2, 0.8]
 # 纵横比的取值范围
@@ -131,25 +132,32 @@ def gen_anchor(s_list, r_list):
     return anchor
 
 
-def is_contain_target(anchor, target, threshold=0.5):
+def is_contain_target(anchor, target, up_threshold=0.8, down_threshold=0.3):
     """
     判断锚框是否包含目标框, 如果交集 / 目标框的大小 > threshold, 就认为是包含
     :param anchor:      锚框
     :param target:      目标框
     :param threshold:   阀值, 判断是否包含的依据
     :return:
+        1   包含
+        0   去除
+        -1 不包含
     """
     # 交集
     inter_area = intersection(anchor, target)
     target_area = (target[2] - target[0]) * (target[3] - target[1])
-    if inter_area * 1.0 / target_area > threshold:
-        return True
-    return False
+    rate = inter_area * 1.0 / target_area
+    if rate > up_threshold:
+        return 1
+    elif rate < down_threshold:
+        return -1
+    else:
+        return 0
 
 
 def gen_anno(img_path, target_path, anno_name, img_num,
              target_s_list, target_r_list, anchor_s_list, anchor_r_list,
-             target_num=6, pos_num=5, nav_num=10):
+             target_num=6, pos_num=5, nav_num=10, dateset_rate=0.8):
     """
     从img_path中取原始图片上生成target_num个目标框,
     然后对每个目标框生成 pos_num个正例,nav_num个负例
@@ -163,9 +171,11 @@ def gen_anno(img_path, target_path, anno_name, img_num,
     :param nav_num:
     :return:
     """
+
     # 删除标注和 目标文件夹
     if os.path.exists(anno_name):
-        os.remove(anno_name)
+        shutil.rmtree(anno_name)
+    os.mkdir(anno_name)
     if os.path.exists(target_path):
         shutil.rmtree(target_path)
     os.mkdir(target_path)
@@ -178,18 +188,26 @@ def gen_anno(img_path, target_path, anno_name, img_num,
     for img_name_with_suffix in select_imgs:
         # 制造目标框和锚框
         # 获取目标框
-        targets = select_target_imgs(target_s_list, target_r_list, target_num, threshold=0.5)
+        # img_file = os.path.join(img_path, img_name_with_suffix)
+        # img_name = img_name_with_suffix.split('.')[0]
+        # img = Image.open(img_file)
+        # w, h = img.size
 
+        targets = select_target_imgs(target_s_list, target_r_list, target_num, threshold=0.5)
         target_anchar_dict = {k: defaultdict(list) for k in targets}
         # 生成目标框对应的正例和负例
 
         for k, target in targets.items():
             while len(target_anchar_dict[k]['pos']) + len(target_anchar_dict[k]['nav']) < pos_num + nav_num:
                 anchor = gen_anchor(anchor_s_list, anchor_r_list)
-                is_contain = is_contain_target(anchor, target)
-                if len(target_anchar_dict[k]['pos']) < pos_num and is_contain:
+                # show_rectangle(img, [target, anchor], ['target', 'anchor'])
+                # print("anchor {}".format(anchor))
+                # print("target {}".format(target))
+                is_contain = is_contain_target(anchor, target, up_threshold=0.8, down_threshold=0.3)
+                # print("is_contain {}".format(is_contain))
+                if len(target_anchar_dict[k]['pos']) < pos_num and is_contain == 1:
                     target_anchar_dict[k]['pos'].append(anchor)
-                if len(target_anchar_dict[k]['nav']) < nav_num and not is_contain:
+                if len(target_anchar_dict[k]['nav']) < nav_num and is_contain == -1:
                     target_anchar_dict[k]['nav'].append(anchor)
 
         img_file = os.path.join(img_path, img_name_with_suffix)
@@ -218,8 +236,48 @@ def gen_anno(img_path, target_path, anno_name, img_num,
                     annos.append(','.join(arr))
 
     # 将标注写入文件中
-    with open(anno_name, 'w') as f:
-        f.write('\n'.join(annos))
+    total_annos = len(annos)
+    train_anno_ids = random.sample(range(total_annos), int(dateset_rate*total_annos))
+    # test_anno_ids = list(range(total_annos) - train_anno_ids)
+
+    train_anno = []
+    test_anno = []
+    for i, item in enumerate(annos):
+        if i in train_anno_ids:
+            train_anno.append(annos[i])
+        else:
+            test_anno.append(annos[i])
+
+    with open(os.path.join(anno_name, 'train.txt'), 'w') as f:
+        f.write('\n'.join(train_anno))
+    with open(os.path.join(anno_name, 'test.txt'), 'w') as f:
+        f.write('\n'.join(test_anno))
+
+def show_rectangle(img, points=[], label=[], absolute=False):
+    """
+    给img 添加矩形框, 同时还有label
+    :param img:
+    :param points:
+    :param label:
+    :param absolute:
+    :return:
+    """
+    if not absolute:
+        abs_points = []
+        width, height = img.size
+        for item in points:
+            item_list = (item * np.array([width, height, width, height])).astype(int).tolist()
+            abs_points.append(item_list)
+        points = abs_points
+    fig = plt.imshow(img)
+    for i in range(len(points)):
+        rect = plt.Rectangle(xy=(points[i][0], points[i][1]),
+                             width=points[i][2] - points[i][0],
+                             height=points[i][3] - points[i][1],
+                             fill=False, color='red')
+        fig.axes.add_patch(rect)
+        fig.axes.text(points[i][0], points[i][1], label[i], color='yellow')
+    plt.show()
 
 
 if __name__ == '__main__':
