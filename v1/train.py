@@ -4,10 +4,10 @@
 
 import torch
 from torch import nn, optim
-from contain_net import ContainNet
+from v1.contain_net import ContainNet
 import torch.utils.data as tdata
-from img_transform import PhotoTransform
-from contain_dataset import ContainDataset, collect_func
+from v1.img_transform import PhotoTransform
+from v1.contain_dataset import ContainDataset, collect_func
 
 
 anno_train = 'annot/train.txt'

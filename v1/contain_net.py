@@ -2,15 +2,9 @@
 判断是否包含小图片深度网络
 """
 
-
-import torch.utils.data as tdata
 import torch
 # from PIL import Image
-import cv2
-from img_transform import PhotoTransform
-from torch import nn, optim
-from torchsummary import summary
-import numpy as np
+from torch import nn
 
 
 class ContainNet(nn.Module):
