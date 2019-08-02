@@ -66,8 +66,56 @@ class SsdBase(nn.Module):
     """
     ssd 基础网络
     """
-    pass
+    def __init__(self):
+        """
+        初始化
+        """
+        super(SsdBase, self).__init__()
+        self.vgg_out_list = [64, 64, 'M', 128, 128, 'M', 256, 256, 256,
+                             'M', 512, 512, 512, 'L2N', 'M', 512, 512,
+                             512]
+        self.l2_norm = L2Normal(512, 20)
 
+    def conv_base(self, input_dim, out_dim):
+        conv = nn.Conv2d(input_dim, out_dim, kernel_size=3, padding=1, stride=1)
+        relu = nn.ReLU()
+        return conv, relu
+
+    def forward(self, X):
+        # vgg base
+        input_dim = X.size[1]
+        for out_dim in self.vgg_out_list:
+            if isinstance(out_dim, int):
+                conv, relu = self.conv_base(input_dim, out_dim)
+                X = conv(X)
+                X = relu(X)
+            elif out_dim == 'M':
+                maxpooling = nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)
+                X = maxpooling(X)
+            elif out_dim == 'L2N':
+                X = self.l2_norm(X)
+
+        X = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)(X)
+        X = nn.Conv2d(512, 1024, kernel_size=3, padding=6, dilation=6)(X)
+        X = nn.ReLU()(X)
+        X = nn.Conv2d(1024, 1024, kernel_size=1)(X)
+        X = nn.ReLU()(X)
+
+        # muti layer
+
+
+
+class L2Normal(nn.Module):
+    def __init__(self, channel_num, scale):
+        super(L2Normal, self).__init__()
+        self.weight = nn.Parameter(torch.Tensor(channel_num))
+        nn.init.constant_(self.weight, scale)
+
+    def forward(self, x):
+        norm = x.pow(2).sum(1, keepdims=True)
+        x = torch.div(x, norm)
+        out = self.weight.unsqueeze(0).unsqueeze(2).unsqueeze(3).expand_as(x) * x
+        return out
 
 if __name__ == '__main__':
     x = torch.rand(10, 3, 112, 150)
