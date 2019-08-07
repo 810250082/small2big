@@ -44,8 +44,7 @@ class ContainNet(nn.Module):
         # 将目标特征和原图进行叠加
         superpositions = []
         for feature in muti_features:
-            expand_target = target.unsqueeze(0)\
-                                  .unsqueeze(2)\
+            expand_target = target.unsqueeze(2)\
                                   .unsqueeze(3)\
                                   .expand_as(feature)
             superpositions.append(torch.stack((feature, expand_target), dim=1))
@@ -210,9 +209,10 @@ if __name__ == '__main__':
     #
     # summary(net, (3, 112, 150), device='cpu')
 
-    net = SsdBase()
+    net = ContainNet()
     # summary(net, (3, 300, 300), device='cpu')
     x = torch.rand(10, 3, 300, 300)
-    y = net(x)
+    target = torch.Tensor(10, 3, 112, 145)
+    y = net(target, x)
     # y = net(x)
     b = 1
