@@ -70,6 +70,6 @@ def calculate_loss(pre_offset, pre_cls, prior, target):
 
     # 偏移损失
     offset_loss_func = nn.SmoothL1Loss()
-    offset_loss = offset_loss_func(pre_cls * mask, offset)
+    offset_loss = offset_loss_func(pre_offset * mask, offset)
     l = cls_loss + offset_loss
     return l
