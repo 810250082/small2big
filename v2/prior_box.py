@@ -14,14 +14,6 @@ class PriorBox(object):
         cfg 配置
         :param cfg:
         """
-        # self.feature_maps = [38, 19, 10, 5, 3, 1]
-        # self.mult_nums = [8, 16, 32, 64, 100, 300]
-        # self.origin_size = 300
-        # self.min_sizes = [30, 60, 111, 162, 213, 264]
-        # self.max_sizes = [60, 111, 162, 213, 264, 315]
-        # self.aspects = [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
-        # self.clip = True
-
         self.feature_maps = cfg['feature_maps']
         self.mult_nums = cfg['steps']
         self.origin_size = cfg['min_dim']

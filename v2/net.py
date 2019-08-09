@@ -58,11 +58,11 @@ class ContainNet(nn.Module):
             cls_box.append(conv(feature))
             # 预测偏移量
             conv = nn.Conv2d(feature.shape[1], self.anchar_num[k]*4, kernel_size=3, padding=1, stride=1)
-            offset_box.append(conv)
+            offset_box.append(conv(feature))
 
         # 改变形状
-        # cls_box = [item.permute(0, 2, 3, 1) for item in cls_box]
-        # offset_box = [item.permute(0, 2, 3, 1) for item in offset_box]
+        cls_box = torch.cat([item.permute(0, 2, 3, 1).reshape((item.shape[0], -1, 1)) for item in cls_box], dim=1)
+        offset_box = torch.cat([item.permute(0, 2, 3, 1).reshape((item.shape[0], -1, 4)) for item in offset_box], dim=1)
 
         return cls_box, offset_box, self.priors
 
