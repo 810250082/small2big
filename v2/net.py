@@ -105,6 +105,8 @@ class TargetExtractNet(nn.Module):
         target = self.output(target)
         C = target.size()[1]
         return target.view(-1, C)
+        # a = target.view(-1, C)
+        # return a
 
 
 class SsdBase(nn.Module):

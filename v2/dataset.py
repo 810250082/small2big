@@ -16,7 +16,7 @@ class ContainData(tdata.Dataset):
             lines = f.readlines()
             datas = []
             for line in lines:
-                arr = ','.join(line.strip())
+                arr = line.strip().split(',')
                 datas.append({
                     'target': arr[0],
                     'origin': arr[1],
@@ -28,8 +28,8 @@ class ContainData(tdata.Dataset):
         return len(self.datas)
 
     def __getitem__(self, idx):
-        target = cv2.imwrite(self.datas[idx]['target'])
-        origin = cv2.imwrite(self.datas[idx]['origin'])
+        target = cv2.imread(self.datas[idx]['target'])
+        origin = cv2.imread(self.datas[idx]['origin'])
         point = self.datas[idx]['point']
         # 变换
         target, origin = self.transform(target, origin)
